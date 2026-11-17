@@ -1,0 +1,28 @@
+; 挿した PC（物理アクセス。Ch4n24n OS。形は Hacking-Ref の Windows/物理アクセス の SAM のノート）
+$ disk_part: hackdeck disks
+! /dev/sda3
+? 対象のパーティション。いま認識しているディスク（Label が Windows の NTFS）
+$ mnt_dir: hackdeck mntdirs
+! /mnt/win
+? マウント先。/mnt 直下のディレクトリ
+$ mnt_point: hackdeck mounts
+! /mnt/win
+? いまマウントしている所
+$ chntpw_act: hackdeck opts chntpw
+! 一覧
+? 一覧を見るか、パスワードを空にするか
+$ local_user: hackdeck value Administrator
+! Administrator
+? 挿した PC のローカルアカウント。chntpw -l で見たもの
+$ dump_src: hackdeck opts dump-src
+! ローカル(SAM)
+? offline で抜く対象。ローカル（SAM）か、DC のドメイン全体（NTDS）か
+$ bypass_target: hackdeck opts bypass-target
+! utilman
+? 置き換える対象。ログイン画面の「簡単操作」(utilman) か Sticky Keys (sethc)
+$ utilman_act: hackdeck opts utilman-act
+! 仕掛ける
+? utilman を 仕掛ける（cmd に差し替え）か 戻す か
+$ sethc_act: hackdeck opts sethc-act
+! 仕掛ける
+? sethc を 仕掛ける（cmd に差し替え）か 戻す か

@@ -21,12 +21,16 @@ git -C "$KL" checkout -q -- auto/config
 git -C "$KL" pull -q --ff-only || log "kali-live を最新にできなかった（手元の版で続ける）"
 python3 "$HERE/lib/patch-autoconfig.py" "$KL/auto/config" "$OS_NAME"
 
-# 2. 案件の雛形（Hacking-Op）を最新に。USB では GitHub から clone できないので、手元のリポジトリとして同梱する
+# 2. 案件の雛形（Hacking-Op）。手元にあれば最新に、無ければ飛ばす（雛形が空でも bare case は作れる）
+HAVE_HOP=0
 if [ -d "$W/src/Hacking-Op/.git" ]; then
   GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=15' git -C "$W/src/Hacking-Op" pull -q --ff-only \
     || log "Hacking-Op を最新にできなかった（手元の版で続ける）"
+  HAVE_HOP=1
+elif GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=15' git clone -q git@github.com:Ch4n24n/Hacking-Op.git "$W/src/Hacking-Op" 2>/dev/null; then
+  HAVE_HOP=1
 else
-  GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=15' git clone -q git@github.com:Ch4n24n/Hacking-Op.git "$W/src/Hacking-Op"
+  log "Hacking-Op が無い・取れないので飛ばす（案件の雛形は空。bare case で作る）"
 fi
 
 # 3. variant を作り直す（共通の一覧のうち、linux-headers と仮想化は上書きして減らす）
@@ -85,17 +89,23 @@ done
 mkdir -p "$IC/etc/dconf/db/local.d" "$IC/etc/dconf/db/ibus.d"
 DCONF_EXTRA=()   # 版ごとの上書きは、共通の上書きの後に重ねる
 if [ -f "$FL/dconf-overrides.ini" ]; then DCONF_EXTRA=("$FL/dconf-overrides.ini"); fi
-python3 "$HERE/lib/gsettings2dconf.py" "$DESK/gsettings.tsv" "$HERE/share/dconf-overrides.ini" "$IC/etc/dconf/db/local.d/zz-ch4n24n" "${DCONF_EXTRA[@]}"
-cp "$IC/etc/dconf/db/local.d/zz-ch4n24n" "$IC/etc/dconf/db/ibus.d/zz-ch4n24n"   # ibus は自分の profile（system-db:ibus）を読む
+if [ -f "$DESK/gsettings.tsv" ]; then
+  python3 "$HERE/lib/gsettings2dconf.py" "$DESK/gsettings.tsv" "$HERE/share/dconf-overrides.ini" "$IC/etc/dconf/db/local.d/zz-ch4n24n" "${DCONF_EXTRA[@]}"
+  cp "$IC/etc/dconf/db/local.d/zz-ch4n24n" "$IC/etc/dconf/db/ibus.d/zz-ch4n24n"   # ibus は自分の profile（system-db:ibus）を読む
+else
+  log "desktop の設定が無いので dconf の既定はそのまま（他人のビルド）"
+fi
 
 # 6. ホームの雛形（/etc/skel。live のユーザが作られるとき、ここが写される）
-for f in .bashrc .tmux.conf .gitconfig .config/gtk-3.0/settings.ini .config/environment.d/50-gtk-im-ibus.conf; do
-  install -D -m 644 "$DESK/files/$f" "$SK/$f"
-done
-python3 "$HERE/lib/patch-zshrc.py" "$DESK/files/.zshrc" "$SK/.zshrc"
-mkdir -p "$SK/.tmux" && cp -a "$HOME/.tmux/plugins" "$SK/.tmux/"
-install -D -m 600 "$HOME/.config/mozc/config1.db" "$SK/.config/mozc/config1.db"
-install -D -m 644 "$HOME/.config/mozc/ibus_config.textproto" "$SK/.config/mozc/ibus_config.textproto"
+if [ -d "$DESK/files" ]; then
+  for f in .bashrc .tmux.conf .gitconfig .config/gtk-3.0/settings.ini .config/environment.d/50-gtk-im-ibus.conf; do
+    install -D -m 644 "$DESK/files/$f" "$SK/$f"
+  done
+  python3 "$HERE/lib/patch-zshrc.py" "$DESK/files/.zshrc" "$SK/.zshrc"
+fi
+[ -d "$HOME/.tmux/plugins" ] && { mkdir -p "$SK/.tmux" && cp -a "$HOME/.tmux/plugins" "$SK/.tmux/"; } || true
+[ -f "$HOME/.config/mozc/config1.db" ] && install -D -m 600 "$HOME/.config/mozc/config1.db" "$SK/.config/mozc/config1.db" || true
+[ -f "$HOME/.config/mozc/ibus_config.textproto" ] && install -D -m 644 "$HOME/.config/mozc/ibus_config.textproto" "$SK/.config/mozc/ibus_config.textproto" || true
 printf 'SELECTED_EDITOR="/usr/bin/vim.basic"\n' > "$SK/.selected_editor"
 # fastfetch（neofetch の後継）で自分のマーク（ω口の猫）を出す。neofetch と打っても同じ物が出る
 FF=$HERE/share/fastfetch
@@ -107,30 +117,37 @@ install -D -m 755 "$HERE/share/neofetch-wrapper" "$IC/usr/local/bin/neofetch"
 # コマンド帳は、USB で読む本（OS_BOOKS。既定 physical）だけを写す。普段の ctf は、USB に道具が入っていないので入れない。
 # hackdeck の .git も写さない（履歴に ctf の中身が入っている。2026-11-15、本人「俺の指示はあくまで、OSに閉じていたのに」）
 OS_BOOKS=${OS_BOOKS:-physical}
+HD=$HOME/git/hackdeck
+[ -d "$HD" ] || HD=$HERE/vendor/hackdeck   # 手元に無ければ、リポジトリ同梱の hackdeck を使う（公開版のビルド）
 mkdir -p "$SK/git" "$SK/.local/bin"
-rsync -a --delete --exclude '__pycache__' --exclude '/.git' --exclude '/books/' "$HOME/git/hackdeck/" "$SK/git/hackdeck/"
+rsync -a --delete --exclude '__pycache__' --exclude '/.git' --exclude '/books/' "$HD/" "$SK/git/hackdeck/"
 for b in $OS_BOOKS; do
-  [ -d "$HOME/git/hackdeck/books/$b" ] || { echo "[!] hackdeck の本が無い: $b" >&2; exit 1; }
+  [ -d "$HD/books/$b" ] || { echo "[!] hackdeck の本が無い: $b" >&2; exit 1; }
   mkdir -p "$SK/git/hackdeck/books/$b"
-  rsync -a --delete --exclude '__pycache__' "$HOME/git/hackdeck/books/$b/" "$SK/git/hackdeck/books/$b/"
+  rsync -a --delete --exclude '__pycache__' "$HD/books/$b/" "$SK/git/hackdeck/books/$b/"
 done
-rsync -a --delete "$W/src/Hacking-Op/" "$SK/git/Hacking-Op/"
+if [ "$HAVE_HOP" = 1 ]; then rsync -a --delete "$W/src/Hacking-Op/" "$SK/git/Hacking-Op/"; fi
 # symlink にしない: kali-live の auto/config は variant を cp -rTL で写すので、symlink は実ファイルに化ける。
 # hackdeck の起動口は realpath(__file__) から本体を探すため、化けると ~/.local の下を探して起動できない
 printf '#!/bin/sh\n# Ch4n24n OS: hackdeck の本体を呼ぶ（symlink の代わり）\nexec "$HOME/git/hackdeck/bin/hackdeck" "$@"\n' > "$SK/.local/bin/hackdeck"
 chmod 755 "$SK/.local/bin/hackdeck"
-python3 - "$HOME/.config/hackdeck/settings.json" "$SK/.config/hackdeck/settings.json" "$OS_BOOKS" <<'PY'
+python3 - "$HOME/.config/hackdeck/settings.json" "$SK/.config/hackdeck/settings.json" "$OS_BOOKS" "$HAVE_HOP" <<'PY'
 import json, os, sys
-s = json.load(open(sys.argv[1], encoding="utf-8"))
-s["template"] = "~/git/Hacking-Op"
-s["books"] = sys.argv[3].split()   # USB で読むコマンド帳（hackdeck の設定「読むコマンド帳」）
+try:
+    s = json.load(open(sys.argv[1], encoding="utf-8"))
+except OSError:
+    s = {}                                  # 手元に設定が無い（他人のビルド）なら空から
+s["template"] = "~/git/Hacking-Op" if sys.argv[4] == "1" else ""   # 雛形が無ければ空（bare case で作る）
+s["books"] = sys.argv[3].split()            # USB で読むコマンド帳（hackdeck の設定「読むコマンド帳」）
 os.makedirs(os.path.dirname(sys.argv[2]), exist_ok=True)
 json.dump(s, open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 PY
 
-# ブログの「物理アクセス」の2本を、オフラインで読めるように
-install -D -m 644 "$BLOG/2026-11-13-chntpw.md" "$SK/Documents/物理アクセス/Windows にログイン（chntpw）.md"
-install -D -m 644 "$BLOG/2026-11-13-shadow.md" "$SK/Documents/物理アクセス/Linux にログイン（passwd --root）.md"
+# ブログの「物理アクセス」の2本を、あればオフラインで読めるように写す
+if [ -f "$BLOG/2026-11-13-chntpw.md" ]; then
+  install -D -m 644 "$BLOG/2026-11-13-chntpw.md" "$SK/Documents/物理アクセス/Windows にログイン（chntpw）.md"
+  install -D -m 644 "$BLOG/2026-11-13-shadow.md" "$SK/Documents/物理アクセス/Linux にログイン（passwd --root）.md"
+fi
 
 # 版ごとの部品を上から重ねる
 if [ -d "$FL/includes.chroot" ]; then cp -a "$FL/includes.chroot/." "$IC/"; fi

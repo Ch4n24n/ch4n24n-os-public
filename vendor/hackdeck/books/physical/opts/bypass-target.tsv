@@ -1,0 +1,3 @@
+# 置き換える対象（値=次に聞く変数・表示名・説明）
+<utilman_act>	utilman	ログイン画面の「簡単操作」ボタン
+<sethc_act>	sethc	ログイン画面で Shift ×5（Sticky Keys）

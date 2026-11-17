@@ -1,0 +1,4 @@
+% 準備, mokutil
+
+# mokutil: Ch4n24n OS の鍵を、この PC の Secure Boot の鍵の一覧（MOK）から消す（ここで決めたパスワードを、次の起動の MokManager で打って確定）
+sudo mokutil --delete /run/live/medium/ENROLL_THIS_KEY_IN_MOKMANAGER.cer

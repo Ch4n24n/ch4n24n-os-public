@@ -1,0 +1,3 @@
+# offline ダンプの対象（値・表示名・説明。<mnt_point>/Windows から見た相対パス。SYSTEM の bootkey で復号）
+-sam System32/config/SAM -system System32/config/SYSTEM -security System32/config/SECURITY	ローカル(SAM)	member 端末。ローカルのハッシュ＋LSA＋キャッシュしたドメイン資格情報
+-ntds NTDS/ntds.dit -system System32/config/SYSTEM	ドメイン(NTDS)	DC。ドメイン全員のハッシュ（DC は SAM にアカウントが無い）
