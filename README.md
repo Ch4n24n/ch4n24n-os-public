@@ -2,19 +2,15 @@
 
 自分用の Kali の USB OS「Ch4n24n OS」を作る道具です。Kali 公式のビルドに自分用の版を足し、**Secure Boot を切らずに**起動できるよう自分の鍵で署名します。
 
-![Ch4n24n OS](docs/screenshot.png)
+<img src="docs/screenshot.png" alt="Ch4n24n OS" width="480">
 
 ## 何をするか
 
 ```mermaid
-flowchart TD
-    build["① ch4n24n-os build<br/>自分用の版を組み立て、ISO を作る（途中で sudo）"]
-    sign["② ch4n24n-os sign<br/>Secure Boot を切らずに起動できるよう署名する"]
-    vm["ch4n24n-os vm<br/>VM で起動して確認する"]
-    usb["③ ch4n24n-os usb /dev/sdX<br/>USB に書く（暗号化した保存領域＋受け渡し領域）"]
-    build --> sign
-    sign --> vm
-    sign --> usb
+flowchart LR
+    build["① build<br/>ISO を作る"] --> sign["② sign<br/>署名"]
+    sign --> usb["③ usb<br/>USB へ"]
+    sign --> vm["vm<br/>VM で確認"]
 ```
 
 - **build** … Kali 公式の kali-live に自分用の版を重ね、`out/` に ISO を作る
