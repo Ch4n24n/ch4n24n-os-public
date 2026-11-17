@@ -1,0 +1,9 @@
+#!/bin/sh
+# Ch4n24n OS: live-config の部品（0070-tzdata の直後に流れる。prepare が /usr/lib/live/config/0071-ch4n24n-timezone に置く）
+# 0070-tzdata は起動の引数 timezone= を /etc/timezone に書き、/etc/localtime を消して tzdata を組み直す。
+# 2026-11-14 の VM では、/etc/timezone は Asia/Tokyo なのに /etc/localtime は UTC になった（今の tzdata は /etc/timezone を見ないらしい）。
+# /etc/timezone の値で /etc/localtime を張り直す
+tz=$(cat /etc/timezone 2>/dev/null)
+if [ -n "$tz" ] && [ -e "/usr/share/zoneinfo/$tz" ]; then
+    ln -sf "/usr/share/zoneinfo/$tz" /etc/localtime
+fi

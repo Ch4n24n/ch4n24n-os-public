@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Ch4n24n OS（自分用の Kali の USB）を作る道具
+set -euo pipefail
+SELF=$(readlink -f "${BASH_SOURCE[0]}")
+HERE=$(cd "$(dirname "$SELF")/.." && pwd)
+# shellcheck source=../lib/flavor.sh
+source "$HERE/lib/flavor.sh"
+cmd=${1:-help}
+shift || true
+
+case "$cmd" in
+  prepare)
+    exec bash "$HERE/lib/prepare.sh" "$@" ;;
+  build)
+    bash "$HERE/lib/prepare.sh"
+    echo "[*] ここから root で動かす（sudo のパスワードを聞かれる）。初回は1時間ほど。ログ: $W/out/*.log"
+    exec sudo bash "$HERE/lib/build-root.sh" "$W" "$(id -un)" "$FLAVOR" ;;
+  sign)
+    exec bash "$HERE/lib/sign.sh" "$@" ;;
+  vm)
+    exec bash "$HERE/lib/vm.sh" "$@" ;;
+  usb)
+    if [ $# -eq 0 ] || [ "${1:-}" = list ]; then exec bash "$HERE/lib/usb.sh" list; fi
+    dev=$1; shift
+    iso=$(ls -t "$W"/out/"$OS_SLUG"-*.iso 2>/dev/null | head -1)
+    [ -f "$iso" ] || { echo "[!] 署名した ISO が無い（先に $OS_SLUG build と sign）" >&2; exit 1; }
+    echo "[*] 書く ISO: $iso（sudo のパスワード → デバイス名の確認 → 保存領域のパスフレーズ2回）"
+    exec sudo env CH4N24N_OS_FLAVOR="$FLAVOR" bash "$HERE/lib/usb.sh" write "$dev" "$iso" "${1:-}" ;;
+  status)
+    if [ -f "$W/logs/build.status" ]; then echo "前回のビルド（終了コード 日時）: $(cat "$W/logs/build.status")"; else echo "前回のビルドの記録は無い"; fi
+    ls -lh "$W/out" 2>/dev/null || true ;;
+  *)
+    u() { printf '  %-29s %s\n' "$OS_SLUG $1" "$2"; }
+    echo "使い方（$OS_NAME）:"
+    u build "今の PC の設定・hackdeck を写して ISO を作る（途中で sudo。初回は1時間ほど）"
+    u sign "Secure Boot を切らずに起動できるよう、署名した ISO を作る"
+    u "vm [--sb]" "ISO を VM で起動する（--sb で Secure Boot を有効にした PC として）"
+    u usb "挿さっている USB の一覧"
+    u "usb /dev/sdX [GiB]" "USB に書き、暗号化した保存領域（既定 40GiB）と受け渡し用（exFAT）を作る（中身は消える）"
+    u prepare "組み立てだけ（root 不要。build の最初に自動で走る）"
+    u status "前回のビルドの結果"
+    ;;
+esac

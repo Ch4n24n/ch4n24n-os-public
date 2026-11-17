@@ -1,0 +1,24 @@
+label ch4n24n-persistence
+        menu label ^Ch4n24n OS (encrypted persistence)
+        menu default
+        linux @LINUX@
+        initrd @INITRD@
+        append @APPEND_LIVE@ persistent=cryptsetup persistence-encryption=luks persistence systemd.swap=no noautomount
+
+label ch4n24n-toram
+        menu label Ch4n24n OS (encrypted persistence, load to ^RAM)
+        linux @LINUX@
+        initrd @INITRD@
+        append @APPEND_LIVE@ toram persistent=cryptsetup persistence-encryption=luks persistence systemd.swap=no noautomount
+
+label ch4n24n-amnesic
+        menu label Ch4n24n OS (^no persistence)
+        linux @LINUX@
+        initrd @INITRD@
+        append @APPEND_LIVE@ systemd.swap=no noautomount
+
+label live-@FLAVOUR@-failsafe
+        menu label Kali live (fail-safe mode)
+        linux @LINUX@
+        initrd @INITRD@
+        append @APPEND_LIVE_FAILSAFE@

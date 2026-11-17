@@ -1,0 +1,111 @@
+## Ch4n24n OS のパッケージ（prepare が kali-live の variant-ch4n24n に写す）
+## 足し算で作る: kali-linux-default（Kali の既定のツール一式）は入れない
+## 境目: USB を挿して起動した PC そのもの（ディスク・Windows/Linux・ハード）に使う物は入れる。
+##       ネットワークの向こうの別の相手を攻める物（Metasploit・Burp・AD の攻撃一式など）は入れない
+
+## 土台（Kali の最小＋live＋GNOME）
+kali-linux-core
+kali-desktop-live
+kali-desktop-gnome
+dconf-cli
+
+## 今の PC と揃える（テーマ・フォント・日本語入力・クリップボード履歴・スクショ）
+kali-themes-common
+breeze-cursor-theme
+fonts-firacode
+fonts-noto-core
+fonts-noto-cjk
+ibus
+ibus-mozc
+mozc-utils-gui
+copyq
+gnome-screenshot
+fzf
+xsel
+wl-clipboard
+
+## Python・基本の道具（git・tmux・zsh・curl は kali-linux-core に入っている）
+## vim は明示する（kali-linux-core の「vim-tiny か vim か vim-nox」で vim-tiny が選ばれ、vim が入らなかった）
+vim
+python3-pip
+python3-venv
+pipx
+ipython3
+build-essential
+jq
+htop
+7zip
+unzip
+file
+
+## 挿した PC: ディスク・修理・救出
+gparted
+testdisk
+gddrescue
+safecopy
+foremost
+ntfs-3g
+exfatprogs
+dosfstools
+btrfs-progs
+xfsprogs
+smartmontools
+nvme-cli
+hdparm
+lshw
+hwinfo
+
+## 挿した PC: ログイン・パスワード変更・資格情報（ブログの「物理アクセス」の2本を含む）
+chntpw
+samdump2
+creddump7
+libhivex-bin
+regripper
+dislocker
+python3-impacket
+impacket-scripts
+python3-pypykatz
+mimikatz
+bruteforce-luks
+whois
+
+## パスワードの解析
+john
+hashcat
+wordlists
+
+## フォレンジック
+sleuthkit
+autopsy
+guymager
+dc3dd
+ewf-tools
+xmount
+bulk-extractor
+chainsaw
+yara
+
+## ウイルス検査
+clamav
+clamav-freshclam
+rkhunter
+chkrootkit
+
+## 物理ペンテストの機材（RFID・NFC・シリアル・ファームウェア）
+proxmark3
+mfoc
+libnfc-bin
+flashrom
+picocom
+binwalk
+
+## fastfetch（自分のマークを出す。share/fastfetch/。neofetch は Kali から外れたので、neofetch と打てばこれが出る）
+fastfetch
+
+## Secure Boot の鍵の管理（自分の鍵を PC から消す mokutil --delete。hackdeck のコマンド帳にもある）
+mokutil
+
+## 最小のネットワーク（家の LAN の確認・データの移動）
+nmap
+arp-scan
+rsync

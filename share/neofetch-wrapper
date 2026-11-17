@@ -1,0 +1,4 @@
+#!/bin/sh
+# Ch4n24n OS: neofetch は Kali から外れた（作者がやめた）ので、後継の fastfetch を自分のマークで出す
+# マークと表示は ~/.config/fastfetch/config.jsonc（ch4n24n-os の share/fastfetch）
+exec fastfetch "$@"

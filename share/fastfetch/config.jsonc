@@ -1,0 +1,29 @@
+// Ch4n24n OS: fastfetch（neofetch の後継）で自分のマーク（ω口の猫）を出す。
+// ch4n24n-os の prepare が ~/.config/fastfetch/ に置く。neofetch と打っても、これが出る（/usr/local/bin/neofetch）
+{
+  "logo": {
+    "type": "file",
+    "source": "~/.config/fastfetch/ch4n24n.txt",
+    // 168 はくすんだピンク（マークの #C44074 に近い 256 色）
+    "color": { "1": "38;5;168", "2": "white" }
+  },
+  "display": { "color": { "keys": "38;5;168" } },
+  "modules": [
+    "title",
+    "separator",
+    { "type": "os", "format": "Ch4n24n OS ({pretty-name} {arch})" },
+    "host",
+    "kernel",
+    "uptime",
+    "packages",
+    "shell",
+    "de",
+    "terminal",
+    "cpu",
+    "gpu",
+    "memory",
+    "disk",
+    "break",
+    "colors"
+  ]
+}

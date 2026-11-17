@@ -1,0 +1,29 @@
+#!/bin/sh
+# Ch4n24n OS: ビルドの最後に chroot の中で流す（prepare が variant-ch4n24n/hooks/live/ に置く）
+
+# dconf の既定（/etc/dconf/db/{local,ibus}.d/zz-ch4n24n）を組み直す
+dconf update
+
+# ファイルの索引づけ（localsearch）を止める。USB では読み書きが重くなるため
+systemctl --global mask localsearch-3.service localsearch-control-3.service localsearch-writeback-3.service 2>/dev/null || true
+
+# 既定のエディタを vim に（今の PC と同じ vim.basic）
+update-alternatives --set editor /usr/bin/vim.basic 2>/dev/null || true
+
+# ClamAV の定義を焼き込む（ネットの無い所でも検査できるように）。失敗してもビルドは止めない
+if command -v freshclam >/dev/null 2>&1; then
+    freshclam --stdout 2>&1 | tail -n 5 || echo "[ch4n24n] freshclam に失敗。定義なしで続ける"
+fi
+# 常駐の定義の更新は止める（USB で勝手に通信・書き込みしない）
+systemctl disable clamav-freshclam.service 2>/dev/null || true
+
+# sudo はパスワードなし（本人の希望）。live-config の 0040-sudo も起動時に /etc/sudoers.d/live へ同じ行を書くが、
+# 起動の引数に noroot があると外れるので、ここでも明示する。ユーザの名前は、prepare がlive のユーザ（kali）に替える。文法が壊れていたら消す（sudo ごと使えなくなるため）
+printf '%s\n' '# Ch4n24n OS: live のユーザ（@OS_USER@）は sudo にパスワードを要らない' '@OS_USER@ ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/ch4n24n-os
+chmod 0440 /etc/sudoers.d/ch4n24n-os
+visudo -cf /etc/sudoers.d/ch4n24n-os || rm -f /etc/sudoers.d/ch4n24n-os
+
+# 自分のアイコンを引けるように
+gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
+
+exit 0
