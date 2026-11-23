@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 
-# 秘密は絶対に入れない（元は ~/git/tools のルートの .gitignore）
+# 秘密は絶対に入れない（鍵・トークン・設定。秘密は ~/.config/ch4n24n-os 側に置く）
 *.key
 *secret*
 *token*

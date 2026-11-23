@@ -21,7 +21,7 @@ flowchart LR
 
 - Kali Linux（ビルドするマシン）。空きディスクに余裕（目安 数十GB）・ネット（パッケージを数GB落とす）
 - root: ビルドだけ（`build` が途中で sudo を呼ぶ）。live-build・sbsigntool 等は無ければそこで入れる
-- root 不要の部分で使う物: git・python3（PIL・Rsvg）・grub-mkimage・xorriso・mtools・openssl・qemu・ovmf
+- root 不要の部分で使う物: git・python3（PIL・Rsvg・yaml）・chezmoi（任意。ホームのファイルを写すとき）・grub-mkimage・xorriso・mtools・openssl・qemu・ovmf
 
 ## インストール
 
