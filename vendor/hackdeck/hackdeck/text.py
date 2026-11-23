@@ -91,16 +91,27 @@ DOLLAR_RE = re.compile(r"(?<!\$)\$(?!\()([a-z][a-z0-9_]*)\b")
 
 
 def opts_flag(cmd):
-    """$ の行が旗つきの一覧（hackdeck opts <名前> <旗>。ffuf の -e・-fs）なら、その旗。でなければ空"""
+    """$ の行が旗つきの一覧（hackdeck opts <名前> <旗>。ffuf の -e・-fs）なら、その旗。でなければ空。旗はシェルの記号を
+    含むなら引用符で囲む（'{}&'。$ の行は bash が走らせる）ので、囲みを外して返す"""
     argv = cmd.split()
-    return argv[3] if argv[:2] == ["hackdeck", "opts"] and len(argv) > 3 else ""
+    if argv[:2] != ["hackdeck", "opts"] or len(argv) <= 3:
+        return ""
+    try:
+        return shlex.split(cmd)[3]
+    except (ValueError, IndexError):
+        return argv[3]
 
 
 def with_flag(flag, value):
     """旗つきの一覧の、コマンドに入る値（旗のあとに値）。値が空なら旗ごと付けない（「設定しない」の行・何も打たないとき。
     2026-11-08、本人「ffufのオプションの-e,-fsについて、設定しないという選択項目を追加しておいて」。旗をコマンド帳の行に
-    書いていたので、空を選んでも -e・-fs だけ残った）"""
-    return f"{flag} {value}" if flag and value else value
+    書いていたので、空を選んでも -e・-fs だけ残った）。
+    旗に {} があれば、値はその場所に入る（間に空白を入れない。'{}&' は値のあとに &。パラメータファジングの POST の中身は、
+    中身が空なら & ごと付かず -d "FUZZ=key" になる。2026-11-19、本人「パラメータが指定されていないのであれば、追加する
+    FUZZパラメータの先頭に＆をつけないようにすることってできる？」。前は -d "<param_body>&FUZZ=key" で、空だと -d "&FUZZ=key"）"""
+    if not (flag and value):
+        return value
+    return flag.replace("{}", value) if "{}" in flag else f"{flag} {value}"
 
 
 def clip(s, w):

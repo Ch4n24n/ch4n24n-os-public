@@ -12,7 +12,7 @@ import cairo
 from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FONT = os.path.expanduser("~/git/tools/ch4n24n-mark/share/CaveatBrush-Regular.ttf")
+FONT = os.path.expanduser("~/src/local/ch4n24n-mark/share/CaveatBrush-Regular.ttf")
 BG, PINK, GRAY = (21, 21, 27), (196, 64, 116), (150, 150, 160)
 
 

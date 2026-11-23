@@ -25,6 +25,14 @@ def check_line(cmd, where):
     return 0
 
 
+def doubled_flag(flag, v, text):
+    """旗つきの一覧の変数 <v> の隣に、旗も書いてあるか（値に旗が入るので2つ並ぶ）。{} の形は前と後ろの字（'{}&' なら <v>&）"""
+    if "{}" in flag:
+        pre, post = flag.split("{}", 1)
+        return bool(pre and f"{pre}<{v}>" in text or post and f"<{v}>{post}" in text)
+    return re.search(rf"(?:^|\s){re.escape(flag)}\s+<{v}>", text) is not None
+
+
 def check():
     """books/ の本を1冊ずつ読み、変数の候補の定義と、候補を出すコマンドが動くかを確かめる"""
     problems = 0
@@ -58,12 +66,20 @@ def check_book():
     for v in free:
         print(f"[NG] {used[v]} <{v}>: 候補の定義が無い（その場で打つものも `$ {v}: hackdeck value` を書く）")
         problems += 1
-    # 旗つきの一覧（hackdeck opts <名前> <旗>）の変数は、値に旗が入る。コマンドにも旗を書くと2つ並ぶ（2026-11-08）
-    for r in entries:
-        for v in var_names_in(r["command"]):
+    # 旗つきの一覧（hackdeck opts <名前> <旗>）の変数は、値に旗が入る。コマンドにも旗を書くと2つ並ぶ（2026-11-08）。{} の形
+    # （'{}&'）は、変数の隣に同じ字を書くと2つ並ぶ。枝の値（opts の1列目。POST の中身は opts/ffuf-param.tsv の中）も見る（2026-11-19）
+    places = [(r["where"], r["command"]) for r in entries]
+    opts = opts_files()
+    for f in opts.values():
+        lab = book_label(f)
+        places += [(lab if "/" in lab else f"opts/{lab}", line.split("\t")[0])
+                   for line in f.read_text(encoding="utf-8").splitlines() if line and not line.startswith("#")]
+    for where, text in places:
+        for v in var_names_in(text):
             flag = opts_flag(defs.get(v, ("", "", ""))[0])
-            if flag and re.search(rf"(?:^|\s){re.escape(flag)}\s+<{v}>", r["command"]):
-                print(f"[NG] {r['where']} <{v}>: 値に {flag} が入る（旗つきの一覧）。コマンドには <{v}> だけ書く")
+            if flag and doubled_flag(flag, v, text):
+                print(f"[NG] {where} <{v}>: " + (f"値は {flag} の形で入る（旗つきの一覧。{{}} が値）。<{v}> の隣に同じ字を書かない"
+                      if "{}" in flag else f"値に {flag} が入る（旗つきの一覧）。コマンドには <{v}> だけ書く"))
                 problems += 1
     # 候補の値の中の <var>（枝の中の変数。認証の形・opts の -M <nxc_mod> など）にも定義が要る（2026-10-29 追加）。認証の形は、
     # コマンド帳が使っている形（hackdeck authforms・authcreds の1つ目の引数）の分だけ見る。使わない形の変数まで求めると、形の
@@ -83,7 +99,6 @@ def check_book():
         for _shown, kids in shape:
             for v in kids:
                 branch.setdefault(v, f"AUTHCREDS_SHAPE[{fmt}]")
-    opts = opts_files()
     for f in opts.values():
         for line in f.read_text(encoding="utf-8").splitlines():
             if line and not line.startswith("#"):

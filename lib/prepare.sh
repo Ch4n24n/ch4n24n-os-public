@@ -10,7 +10,8 @@ KL=$W/kali-live
 V=$KL/kali-config/variant-$FLAVOR
 IC=$V/includes.chroot
 SK=$IC/etc/skel
-DESK=$HOME/git/tools/desktop
+MACHINE=$HOME/src/local/machine   # マシンの台帳（Ansible）。GNOME の設定は ansible/group_vars/all.yml の gnome_dconf
+DOTS=$HOME/src/local/dotfiles     # ホームのファイルの原本（chezmoi）。書き出す中身は chezmoi cat で取る
 BLOG=$HOME/git/Ch4n24n.github.io/content/notes
 log() { printf '[*] %s\n' "$*"; }
 
@@ -85,23 +86,29 @@ for s in 48 128 256; do
   install -D -m 644 "$W/brand/icon-$s.png" "$IC/usr/share/icons/hicolor/${s}x${s}/apps/$OS_SLUG.png"
 done
 
-# 5. デスクトップの設定（desktop ツールの gsettings.tsv を dconf の既定に）
+# 5. デスクトップの設定（マシンの台帳の gnome_dconf を dconf の既定に）
 mkdir -p "$IC/etc/dconf/db/local.d" "$IC/etc/dconf/db/ibus.d"
 DCONF_EXTRA=()   # 版ごとの上書きは、共通の上書きの後に重ねる
 if [ -f "$FL/dconf-overrides.ini" ]; then DCONF_EXTRA=("$FL/dconf-overrides.ini"); fi
-if [ -f "$DESK/gsettings.tsv" ]; then
-  python3 "$HERE/lib/gsettings2dconf.py" "$DESK/gsettings.tsv" "$HERE/share/dconf-overrides.ini" "$IC/etc/dconf/db/local.d/zz-ch4n24n" "${DCONF_EXTRA[@]}"
+if [ -f "$MACHINE/ansible/group_vars/all.yml" ]; then
+  python3 "$HERE/lib/gsettings2dconf.py" "$MACHINE/ansible/group_vars/all.yml" "$HERE/share/dconf-overrides.ini" "$IC/etc/dconf/db/local.d/zz-ch4n24n" "${DCONF_EXTRA[@]}"
   cp "$IC/etc/dconf/db/local.d/zz-ch4n24n" "$IC/etc/dconf/db/ibus.d/zz-ch4n24n"   # ibus は自分の profile（system-db:ibus）を読む
 else
-  log "desktop の設定が無いので dconf の既定はそのまま（他人のビルド）"
+  log "マシンの台帳（~/src/local/machine）が無いので dconf の既定はそのまま（他人のビルド）"
 fi
 
 # 6. ホームの雛形（/etc/skel。live のユーザが作られるとき、ここが写される）
-if [ -d "$DESK/files" ]; then
-  for f in .bashrc .tmux.conf .gitconfig .config/gtk-3.0/settings.ini .config/environment.d/50-gtk-im-ibus.conf; do
-    install -D -m 644 "$DESK/files/$f" "$SK/$f"
+if [ -d "$DOTS" ] && command -v chezmoi >/dev/null; then
+  DF=$W/dotfiles   # chezmoi が書き出す中身（原本の名前は dot_bashrc・private_dot_config/… なので、chezmoi に書き出させる）
+  rm -rf "${W:?}/dotfiles"
+  for f in .bashrc .tmux.conf .gitconfig .config/gtk-3.0/settings.ini .config/environment.d/50-gtk-im-ibus.conf .zshrc; do
+    mkdir -p "$DF/$(dirname "$f")"
+    chezmoi --source "$DOTS" cat "$HOME/$f" > "$DF/$f"
+    [ "$f" = .zshrc ] || install -D -m 644 "$DF/$f" "$SK/$f"
   done
-  python3 "$HERE/lib/patch-zshrc.py" "$DESK/files/.zshrc" "$SK/.zshrc"
+  python3 "$HERE/lib/patch-zshrc.py" "$DF/.zshrc" "$SK/.zshrc"
+else
+  log "ホームのファイルの原本（~/src/local/dotfiles と chezmoi）が無いので /etc/skel に写さない（他人のビルド）"
 fi
 [ -d "$HOME/.tmux/plugins" ] && { mkdir -p "$SK/.tmux" && cp -a "$HOME/.tmux/plugins" "$SK/.tmux/"; } || true
 [ -f "$HOME/.config/mozc/config1.db" ] && install -D -m 600 "$HOME/.config/mozc/config1.db" "$SK/.config/mozc/config1.db" || true

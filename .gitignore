@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+
+# 秘密は絶対に入れない（元は ~/git/tools のルートの .gitignore）
+*.key
+*secret*
+*token*
+config

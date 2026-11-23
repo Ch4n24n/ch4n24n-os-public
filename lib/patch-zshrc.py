@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""今の PC の ~/.zshrc（desktop ツールの files/.zshrc）を、USB 用に手当てして写す。
+"""今の PC の ~/.zshrc（chezmoi の原本 ~/src/local/dotfiles の dot_zshrc を chezmoi cat で書き出した物）を、USB 用に手当てして写す。
 
 使い方: patch-zshrc.py <元の .zshrc> <出力>
 USB に無い物（pyenv・vhack）を呼ぶ行に「あれば」のガードを付け、ビルドするユーザの home の絶対パスを $HOME にする。
